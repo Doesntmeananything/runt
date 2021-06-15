@@ -4,7 +4,9 @@ use termion::raw::IntoRawMode;
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders},
+    style::{Modifier, Style},
+    text::Span,
+    widgets::{Block, Borders, Paragraph},
     Terminal,
 };
 
@@ -14,24 +16,32 @@ fn main() -> Result<(), Box<dyn Error>> {
         .expect("Failed to switch to raw mode");
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend).expect("Failed to initialize terminal backend");
+
     terminal
-        .draw(|f| {
+        .draw(|frame| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints(
                     [
-                        Constraint::Percentage(10),
-                        Constraint::Percentage(80),
-                        Constraint::Percentage(10),
+                        Constraint::Percentage(20),
+                        Constraint::Percentage(60),
+                        Constraint::Percentage(20),
                     ]
                     .as_ref(),
                 )
-                .split(f.size());
-            let block = Block::default().title("Block").borders(Borders::ALL);
-            f.render_widget(block, chunks[0]);
-            let block = Block::default().title("Block 2").borders(Borders::ALL);
-            f.render_widget(block, chunks[1]);
+                .split(frame.size());
+
+            let input = "This is a test message";
+
+            let input_panel = Paragraph::new(input).block(
+                Block::default().borders(Borders::ALL).title(Span::styled(
+                    "Your message",
+                    Style::default().add_modifier(Modifier::BOLD),
+                )),
+            );
+
+            frame.render_widget(input_panel, chunks[2]);
         })
         .expect("Failed to draw to terminal");
 
