@@ -1,5 +1,9 @@
 {
   "cSpell.words": [
-    "termion"
+    "termion",
+    "crossterm"
+  ],
+  "cSpell.ignoreWords": [
+    "scopeguard"
   ]
 }

@@ -1,49 +1,52 @@
-use std::{error::Error, io};
+use std::io::{self, Write};
 
-use termion::raw::IntoRawMode;
-use tui::{
-    backend::TermionBackend,
-    layout::{Constraint, Direction, Layout},
-    style::{Modifier, Style},
-    text::Span,
-    widgets::{Block, Borders, Paragraph},
-    Terminal,
+use anyhow::Result;
+use crossterm::{
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
 };
+use scopeguard::defer;
+use tui::{backend::CrosstermBackend, Terminal};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let stdout = io::stdout()
-        .into_raw_mode()
-        .expect("Failed to switch to raw mode");
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend).expect("Failed to initialize terminal backend");
+mod input;
 
-    terminal
-        .draw(|frame| {
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(1)
-                .constraints(
-                    [
-                        Constraint::Percentage(20),
-                        Constraint::Percentage(60),
-                        Constraint::Percentage(20),
-                    ]
-                    .as_ref(),
-                )
-                .split(frame.size());
+fn main() -> Result<()> {
+    setup_terminal()?;
+    defer! {
+        shutdown_terminal();
+    }
 
-            let input = "This is a test message";
+    let input = Input::new();
 
-            let input_panel = Paragraph::new(input).block(
-                Block::default().borders(Borders::ALL).title(Span::styled(
-                    "Your message",
-                    Style::default().add_modifier(Modifier::BOLD),
-                )),
-            );
+    let mut terminal = start_terminal(io::stdout())?;
+}
 
-            frame.render_widget(input_panel, chunks[2]);
-        })
-        .expect("Failed to draw to terminal");
+fn setup_terminal() -> Result<()> {
+    enable_raw_mode()?;
+    io::stdout().execute(EnterAlternateScreen)?;
 
     Ok(())
+}
+
+fn shutdown_terminal() {
+    let leave_screen = io::stdout().execute(LeaveAlternateScreen).map(|_f| ());
+
+    if let Err(e) = leave_screen {
+        eprintln!("leave_screen failed:\n{}", e);
+    }
+
+    let leave_raw_mode = disable_raw_mode();
+
+    if let Err(e) = leave_raw_mode {
+        eprintln!("leave_raw_mode failed:\n{}", e);
+    }
+}
+
+fn start_terminal<W: Write>(buf: W) -> io::Result<Terminal<CrosstermBackend<W>>> {
+    let backend = CrosstermBackend::new(buf);
+    let mut terminal = Terminal::new(backend)?;
+    terminal.hide_cursor()?;
+    terminal.clear()?;
+
+    Ok(terminal)
 }
