@@ -8,7 +8,10 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.41"
+crossbeam-channel = "0.5.1"
 crossterm = "0.20.0"
+log = "0.4.14"
+simplelog = { version="0.10.0", default-features=false }
 scopeguard = "1.1.0"
 tui = { version="0.15", default-features=false, features=['crossterm', 'serde'] }
 unicode-width = "0.1.8"

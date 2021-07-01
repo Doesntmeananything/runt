@@ -1,6 +1,10 @@
-use std::io::{self, Write};
+use std::{
+    io::{self, Write},
+    time::Duration,
+};
 
 use anyhow::Result;
+use crossbeam_channel::tick;
 use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
@@ -8,7 +12,14 @@ use crossterm::{
 use scopeguard::defer;
 use tui::{backend::CrosstermBackend, Terminal};
 
+use crate::input::Input;
+
+mod app;
 mod input;
+mod notify_mutex;
+
+static TICK_INTERVAL: Duration = Duration::from_secs(5);
+static SPINNER_INTERVAL: Duration = Duration::from_millis(80);
 
 fn main() -> Result<()> {
     setup_terminal()?;
@@ -17,6 +28,12 @@ fn main() -> Result<()> {
     }
 
     let input = Input::new();
+
+    let rx_input = input.receiver();
+    let ticker = tick(TICK_INTERVAL);
+    let spinner_ticker = tick(SPINNER_INTERVAL);
+
+    let mut app = App::new();
 
     let mut terminal = start_terminal(io::stdout())?;
 }

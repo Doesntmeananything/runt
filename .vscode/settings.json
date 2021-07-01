@@ -4,6 +4,7 @@
     "crossterm"
   ],
   "cSpell.ignoreWords": [
+    "condvar",
     "scopeguard"
   ]
 }
